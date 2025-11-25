@@ -1,0 +1,29 @@
+from config import char_limit
+import os 
+
+def get_file_content(wookring_dir, file_path):
+    joined_path = os.path.join(wookring_dir, file_path)
+    abs_work_path = os.path.abspath(wookring_dir)
+    abs_joined = os.path.abspath(joined_path)
+    print(joined_path)
+    print(abs_work_path)
+    print(abs_joined)
+
+    try:
+
+        if not abs_joined.startswith(abs_work_path):
+            return f'Error: Cannot read "{file_path}" as it is outside the permitted working directory'
+        if not os.path.isfile(joined_path):
+            return f'Error: File not found or is not a regular file: "{file_path}"'
+
+        with open(abs_joined, "r") as f:
+            content = f.read()
+
+        if len(content) > char_limit:
+            content = content[:char_limit]
+        
+        content += f'[...File "{file_path}" truncated at {char_limit} characters]'
+        return content
+        
+    except Exception as e:
+        return f"Error: {e}"
