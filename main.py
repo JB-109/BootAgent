@@ -27,6 +27,7 @@ if not prompt or not prompt.strip():
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+# "parts" is just an attribute of the Content class, but part is a class instance in the types module.
 messages = [
     types.Content(
         role="user",
@@ -41,6 +42,7 @@ functions_map = {
     "write_files": functions.write_files.write_files 
 }
 
+# here schema for each function is defined
 available_functions = types.Tool(
     function_declarations=[
         functions.get_files_info.schema_get_files_info,
@@ -53,12 +55,14 @@ available_functions = types.Tool(
 
 def call_function(function_call_part, verbose=False):
     if function_call_part.name in functions_map:
+
         if verbose == True:
             print(f"Calling function: {function_call_part.name}({function_call_part.args})")
         else:
             print(f" - Calling function: {function_call_part.name}")
+
         result = functions_map[function_call_part.name](working_dir=os.path.abspath("./calculator"), **function_call_part.args)
-        print(result)
+
         return types.Content(
             role="tool",
             parts=[
@@ -76,11 +80,12 @@ def call_function(function_call_part, verbose=False):
                     name=function_call_part.name,
                     response={"error": f"Unknown function: {function_call_part.name}"},
                 )
-            ],
+            ]
         )
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+# max self-talk: 15
 count = 0
 while count <= 14:
 
@@ -98,24 +103,24 @@ while count <= 14:
     
     if not has_function_calls and has_text_response:
         print(response.text)
+        if len(sys.argv) > 2 and sys.argv[2] == "--verbose":
+            print(f"Prompt token: {response.usage_metadata.prompt_token_count}")
+            print(f"Response token: {response.usage_metadata.candidates_token_count}")
         break
-
-    count += 1
 
     function_responses = []
     for each in response.function_calls:
+
         if len(sys.argv) > 2 and sys.argv[2] == "--verbose":
-            print(f"Calling function: {each.name}({each.args})")
+            result = call_function(each, True)
         else: 
-            print(f" - Calling function: {each.name}")
-        
-        result = call_function(each)
+            result = call_function(each)
+
         if not result.parts or not result.parts[0].function_response:
             raise Exception("empty function call result")
         
-        if len(sys.argv) > 2 and sys.argv[2] == "--verbose":
-            print(f"-> {result.parts[0].function_response.response}")
-        
+        # appending only the parts (attribute),
+        # Parts attribute contain the part class instance which contains fn name and response.
         function_responses.append(result.parts[0])
             
     messages.append(
@@ -124,6 +129,8 @@ while count <= 14:
             parts=function_responses
         )
     )
+
+    count += 1
 
 
     
