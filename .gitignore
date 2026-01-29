@@ -10,3 +10,7 @@ wheels/
 # Virtual environments
 .venv
 
+calculator/*
+!calculator/lorem.txt
+
+PROJECT_DOCUMENTATION.md
